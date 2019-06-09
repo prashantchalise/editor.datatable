@@ -1,0 +1,314 @@
+﻿@{
+	ViewData["Title"] = "Hello David, Please check this out :)";
+	ViewBag.Current = "DASHBOARD";
+}
+
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+	<!-- Content Header (Page header) -->
+	<section class="content-header">
+		<h1>
+			 Dashboard
+			<small>pre-alpha 1.0.0</small>
+		</h1>
+		<ol class="breadcrumb">
+			<li><a href="@Url.Action("Index","Home")"><i class="fa fa-dashboard"></i> Home</a></li>
+			<li class="active">Dashboard</li>
+		</ol>
+
+	</section>
+	<!-- Main content -->
+    <section class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">Data Table With Full Features</h3>
+                    </div>
+                    <!-- /.box-header -->
+                    <div class="box-body">
+
+
+                        <div id="container" class="row">
+                            <div id="table-container" class="col-md-6">
+                                <table id="onPageExample" class="table table-condensed table-striped" >
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Salary</th>
+                                        </tr>
+                                    </thead>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Salary</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div id="form-container" class="col-md-6">
+                                <p class="start-editing">Select a row<br>to edit or delete</p>
+                                <p class="add-new"><a href="">Or add a new row</a></p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- /.box-body -->
+                </div>
+                <!-- /.box -->
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </section>
+</div><!-- /.content-wrapper -->
+
+@section css{
+    
+    <style type="text/css">
+
+        
+    </style>
+    
+    }
+@section scripts{
+    
+    <script type="text/javascript">
+        
+function onPageDisplay ( elm ) {
+    var name = 'onPage'+Math.random();
+    var Editor = $.fn.dataTable.Editor;
+    var emptyInfo;
+
+    Editor.display[name] = $.extend( true, {}, Editor.models.display, {
+        // Create the HTML mark-up needed the display controller
+        init: function ( editor ) {
+            emptyInfo = elm.html();
+            return Editor.display[name];
+        },
+
+        // Show the form
+        open: function (editor, form, callback) {
+            elm.children().detach();
+            elm.append( form );
+
+            if ( callback ) {
+                callback();
+            }
+        },
+
+        // Hide the form
+        close: function ( editor, callback ) {
+            elm.children().detach();
+            elm.html( emptyInfo );
+
+            if ( callback ) {
+                callback();
+            }
+        }
+    } );
+
+    return name;
+}
+
+
+var editor; // use a global for the submit and return data rendering in the examples
+
+        var post_data = { ShowAll: 1 };
+
+
+$(document).ready(function() {
+    editor = new $.fn.dataTable.Editor({
+        ajax: {
+            create: {
+                type: 'POST',
+                url: 'api/Home/Staffs/SaveStaffs',
+                contentType: 'application/json',
+                data: function (d) {
+                    var customdata = d.data[0];
+                    return JSON.stringify(customdata);
+                }
+            },
+            edit: {
+                type: 'POST',
+                url: 'api/Home/Staffs/UpdateStaffs',
+                contentType: 'application/json',
+                data: function (d) {
+                    var StaffId = Object.keys(d.data)[0];
+                    var customdata = d.data[StaffId];
+                    customdata.StaffId = StaffId;
+                    return JSON.stringify(customdata);
+                }
+            },
+            remove: {
+                type: 'DELETE',
+                url: 'api/Home/Staffs/DeleteStaffs'
+            }
+        },
+
+        table: "#onPageExample",
+        idSrc: 'StaffId',
+        display: onPageDisplay( $('#form-container') ),
+        fields: [ {
+                label: "First name:",
+                name: "first_name"
+            }, {
+                label: "Last name:",
+                name: "last_name"
+            }, {
+                label: "Position:",
+                name: "position"
+            }, {
+                label: "Salary:",
+                name: "salary"
+            },
+            {
+                label: "Contacts:",
+                name: "ContactsJSON",
+                type: "RenderContactsJSON", // Using the custom field type
+                def: 0
+            }
+        ]
+    } );
+
+    var table = $('#onPageExample').DataTable({
+         
+        "ajax": {
+            "url": "api/Home/Staffs/GetStaffssList",
+            "type": "POST",
+            "data": post_data,
+            "dataSrc": ""
+        },
+
+         columns: [
+            { data: null, render: function ( data, type, row ) {
+                // Combine the first and last names into a single table field
+                return data.first_name+' '+data.last_name;
+            } },
+             { data: "salary" }
+
+        ],
+        select: true,
+        pagingType: 'simple',
+        lengthChange: false
+    } );
+
+    table
+        .on('select', function (e, dt, type, indexes) {
+            editor.edit( indexes, {
+                title: 'Edit row',
+                buttons: [
+                    'Save changes',
+                    {
+                        label: 'Delete',
+                        fn: function () {
+                            editor
+                                .remove( indexes, false )
+                                .submit();
+                        }
+                    }
+                ]
+            } );
+        } )
+        .on( 'deselect', function () {
+            editor.close();
+        } );
+
+    $('#form-container').on( 'click', 'p.add-new', function (e) {
+        e.preventDefault();
+
+        editor.create( {
+                title: 'Create new row',
+                buttons: [
+                    'Save',
+                    {
+                        label: 'Cancel',
+                        fn: function () {
+                            editor.close();
+                        }
+                    }
+                ]
+        } );
+    } );
+});
+
+        // Todo field type plug-in code
+        (function ($, DataTable) {
+
+            if (!DataTable.ext.editorFields) {
+                DataTable.ext.editorFields = {};
+            }
+
+            var Editor = DataTable.Editor;
+            var _fieldTypes = DataTable.ext.editorFields;
+
+            _fieldTypes.RenderContactsJSON = {
+                create: function (conf) {
+                    var that = this;
+
+                    conf._enabled = true;
+
+                    // Create the elements to use for the input
+                    //// Create the elements to use for the input
+                    //conf._input = $(
+                    //    '<div id="' + Editor.safeId(conf.id) + '">' +
+                    //    '<button type="button" class="inputButton" value="0">To do</button>' +
+                    //    '<button type="button" class="inputButton" value="1">Done</button>' +
+                    //    '</div>');
+
+
+                    conf._input = $(
+                        '<table class="table table-condensed tables" id="' + Editor.safeId(conf.id) + '"/>');
+
+                    console.log(conf);
+
+                    //// Use the fact that we are called in the Editor instance's scope to call
+                    //// the API method for setting the value when needed
+                    //$('button.inputButton', conf._input).click(function () {
+                    //    if (conf._enabled) {
+                    //        that.set(conf.name, $(this).attr('value'));
+                    //    }
+
+                    //    return false;
+                    //});
+
+                    return conf._input;
+                },
+
+                get: function (conf) {
+                    return $('button.selected', conf._input).attr('value');
+                },
+
+                set: function (conf, val) {
+                    console.log(val);
+                    var response = $.parseJSON(val);
+                    
+                    var trHTML = '';
+                    $.each(response, function (i, item) {
+                        trHTML += '<tr><td>' + item.Phone + '</td></tr>';
+                    });
+                    if (response.length == 0) {
+                        trHTML += '<tr><td><p>No contacts found. <a href="#">Click here</a> to add new</p></td></tr>';
+                    } else {
+                        trHTML += '<tr><td><a href="#">Add new</a></td></tr>';
+                    }
+                    $(conf._input).empty().append(trHTML);
+                 },
+
+                enable: function (conf) {
+                    conf._enabled = true;
+                    $(conf._input).removeClass('disabled');
+                },
+
+                disable: function (conf) {
+                    conf._enabled = false;
+                    $(conf._input).addClass('disabled');
+                }
+            };
+
+        })(jQuery, jQuery.fn.dataTable);
+
+    </script>
+    
+    }

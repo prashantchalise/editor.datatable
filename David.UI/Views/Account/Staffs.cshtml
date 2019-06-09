@@ -1,0 +1,173 @@
+﻿<!-- Auto Page By: Prashant -->
+<!-- Created On: 01/06/2016 -->
+<!-- HTML for Staffs -->
+@using System.Security.Claims
+@{
+	ViewData["Title"] = "Staffs List";
+	ViewBag.Current = "Settings_Staffs";
+
+	Layout = "~/Views/Shared/_Layout_Admin.cshtml";
+}
+
+<script type="text/javascript">
+	var parentcategoryid=@ViewBag.VendorId;
+	var parentcategorytype='@ViewBag.ParentCategoryType';
+</script>
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper" data-ng-controller='staffsController'>
+	<!-- Content Header (Page header) -->
+	<section class="content-header">
+		<h1>
+			Staffs
+			<small>pre-alpha 1.0.0</small>
+		</h1>
+		<ol class="breadcrumb">
+			<li><a href="@Url.Action("Index","Home")"><i class="fa fa-dashboard"></i> Home</a></li>
+			<li class="active">List of User</li>
+		</ol>
+	</section>
+	<!-- Main content -->
+	<section class="content">
+		<!-- Info boxes -->
+		<div class="row">
+			<div class="col-md-12 col-sm-12 col-xs-12">
+				<div class="alert alert-rolpo alert-dismissable" id="Staffs_alert"></div>
+			</div><!-- /.col -->
+		</div><!-- /.row -->
+		<!-- Main row -->
+		<div class="row">
+			<div class="col-md-12">
+				<div class="box">
+					<div class="alert alert-rolpo alert-dismissable" style="display:none;" id="staffMsg"></div>
+					<div class="box-header">
+						<div class="box-success clearfix">
+							<a class="btn btn-sm btn-info btn-flat pull-left" href="javascript:;" data-ng-click="OpenStaffsSaveDialog()">Add new Staff</a>
+						</div><!-- /.box-success -->
+					</div><!-- /.box-header -->
+					<div class="box-body">
+						<div class="box box-default">
+							<div class="box-header with-border">
+								<h3 class="box-title">Filter</h3>
+							</div><!-- /.box-header -->
+							<!-- form start -->
+							<div class="box-body">
+								<table class="table table-responsive table-striped">
+									<tr>
+										<th>Name:</th>
+										<td><input type="text" class="input-sm form-control" data-ng-model="tstafffilter.StaffName" placeholder="Name" /></td>
+										<th>Designation:</th>
+										<td><select ng-model="tstafffilter.DesignationId" data-ng-init="0" class="form-control input-sm" ng-options="item.Value as item.Name for item in designations" required=""><option value="">--Select --</option></select></td>
+										<th>
+											<button type="submit" class="btn btn-primary" data-ng-click="GetStaffsByFilter()">Filter</button>
+											<button type="submit" class="btn btn-warning" data-ng-click="ResetStaffsFilter()">Clear</button>
+										</th>
+									<tr>
+								</table>
+								<div>
+								</div><!-- /.box-info -->
+								<div class="row">
+									<div class="col-sm-12">
+										<table class="table table-bordered table-striped">
+											<thead>
+												<tr>
+													<th>Name</th>
+													<th>Designation</th>
+													<th>Email</th>
+													<th class="hidden-xs">Contact</th>
+													<th>Actions</th>
+												</tr>
+											</thead>
+											<tbody ng-show="staffs.length > 0">
+												<tr ng-repeat="staff in staffs">
+													<td>{{staff.StaffName}}</td>
+													<td>{{staff.DesignationName}}</td>
+													<td>{{staff.PrimaryContactEmail}}</td>
+													<td class="hidden-xs"><b>Phone: </b>{{staff.Phone}}<br /><b>Mobile: </b>{{staff.Mobile}}</td>
+													<td>
+														<a href="javascript:;" data-ng-click="OpenStaffsUpdateDialog(staff.StaffId);" class="btn btn-info btn-sm" title="Edit"><i class="fa fa-edit"></i></a>
+														<a href="javascript:;" data-ng-click="DeleteStaff(staff.StaffId);" class="btn btn-danger btn-sm" title="Delete"><i class="fa fa-trash"></i></a>
+													</td>
+												</tr>
+											</tbody>
+											<tr data-ng-hide="staffs.length > 0">
+												<td colspan="5" class="text-center">
+													<p>No records found.</p>
+												</td>
+											</tr>
+											<tfoot>
+												<tr>
+													<th>Name</th>
+													<th>Designation</th>
+													<th>Email</th>
+													<th class="hidden-xs">Contact</th>
+													<th>Actions</th>
+												</tr>
+											</tfoot>
+										</table>
+									</div>
+								</div><!-- /.row -->
+
+								<div class="row">
+									<div class="col-sm-2" data-ng-show="StaffPageInfo.Has_record">
+										<ul class="pagination no-margin pull-left">
+											<li>
+												<select data-ng-model="tstafffilter.PageSize" data-ng-change="OnStaffsPageSizeChanged()">
+													<option value="10">10</option>
+													<option value="20">20</option>
+													<option value="30">30</option>
+												</select>
+											</li>
+										</ul>
+									</div>
+									<div class="col-sm-4" data-ng-show="StaffPageInfo.Has_record">
+										<div>Showing <b>{{StaffPageInfo.PageStart}}</b> to <b>{{StaffPageInfo.PageEnd}}</b> of <b>{{StaffPageInfo.TotalItems}}</b> entries</div>
+									</div>
+									<div class="col-sm-6" data-ng-show="StaffPageInfo.Has_record">
+										<uib-pagination total-items="StaffPageInfo.TotalItems" class="pagination no-margin pull-right" ng-model="tstafffilter.PageNumber" ng-change="OnStaffsPageChanged()" items-per-page="tsfilter.PageSize"></uib-pagination>
+									</div>
+								</div><!-- /.row -->
+
+							</div><!-- /.box-body -->
+							<div class="overlay" ng-show="loading">
+								<i class="fa fa-refresh fa-spin"></i>
+							</div>
+						</div><!-- /.box -->
+					</div>
+				</div>
+			</div>
+		</div><!-- /.row  Main row ends here..-->
+
+	</section><!-- /.content -->
+</div><!-- /.content-wrapper -->
+
+
+<script type="text/ng-template" id="customUpdateStaffs">
+	@{Html.RenderPartial("~/views/shared/_staffs.cshtml", new { ParentCategory = ViewBag.ParentCategoryType, Id = ViewBag.VendorId });}
+</script>
+
+
+
+@section css {
+	<!-- Select 2 -->
+	<link href="~/lib/angular-ui-select/dist/select.min.css" rel="stylesheet" />
+}
+
+
+
+
+
+@section Scripts {
+
+	<!-- Select 2 -->
+
+	<script src="~/lib/angular-ui-select/dist/select.min.js"></script>
+	<!-- InputMask -->
+	<script src="~/lib/input-mask/jquery.inputmask.js"></script>
+	<script src="~/lib/input-mask/jquery.inputmask.date.extensions.js"></script>
+
+	
+<script src="~/lib/angController/Account/staffsController.js"></script>
+
+
+}
